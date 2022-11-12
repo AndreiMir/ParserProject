@@ -4,10 +4,6 @@ from bs4 import BeautifulSoup
 import webbrowser
 import json
 
-zzzzz
-xxxx
-
-
 
 # возвращает HTML-block объект типа BS
 def get_html_block(germancars_link):

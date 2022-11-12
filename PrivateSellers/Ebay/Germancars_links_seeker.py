@@ -6,9 +6,8 @@ import json
 
 
 class CollectAllLinksFromAllPagesOfSiteClass:
-    def __init__(self):
 
-        # возвращает HTML-block объект типа BS
+    # возвращает HTML-block объект типа BS
         def __get_html_block(self, germancars_link):
             response = requests.get(germancars_link)
             html_block = BeautifulSoup(response.text, 'html.parser')
@@ -18,7 +17,7 @@ class CollectAllLinksFromAllPagesOfSiteClass:
 
         # Возвращает список lot_links_list = [] ссылок в "грязном" виде
         def __get_all_lots_links_from_one_page_list(self, germancars_link):
-            # dirty_lot_links_list = []
+            dirty_lot_links_list = []
 
             html_block = self.__get_html_block(germancars_link)
 
@@ -33,7 +32,7 @@ class CollectAllLinksFromAllPagesOfSiteClass:
 
         # Возвращает список чистых ссылок web_page_links_list = []
         def __get_clear_all_links_list(self, germancars_link):
-            # web_page_links_list = []
+            web_page_links_list = []
             dirty_lot_links_list = self.get_all_lots_links_from_one_page_list(germancars_link)
             for dirty_lot_link in dirty_lot_links_list:
                 if 'http://https://' not in dirty_lot_link:
@@ -58,9 +57,7 @@ class CollectAllLinksFromAllPagesOfSiteClass:
 
             return unique_links_list  # Тут возвращаем результат функции
 
-
-
-        def __test(self):
+        def test(self):
             print('=========print================START=================================')
             dirty_lot_links_list = []
             web_page_links_list = []
@@ -92,7 +89,7 @@ class CollectAllLinksFromAllPagesOfSiteClass:
             #     webbrowser.open_new_tab(link)
 
 
-        self.broken_links_list = []
+            # self.broken_links_listlist = []
 
-        parser = CollectAllLinksFromAllPagesOfSiteClass()
-        self.__test()
+parser = CollectAllLinksFromAllPagesOfSiteClass()
+parser.test()
