@@ -1,4 +1,5 @@
 import site
+from logging import info
 from pprint import pprint
 import requests
 from bs4 import BeautifulSoup
@@ -23,6 +24,16 @@ class CapitalauctionCom:
 
         return html_block
 
+    # returns last page number
+    def __get_last_page_number(self):
+
+        html_block = self.__get_html_block(self.base_page_url)
+        last_page_html_block = html_block.find("div", class_="pagination catalog__top-pagination")
+        last_page_number = last_page_html_block.findAll("a")[-1].text
+        last_page_number = int(last_page_number)
+
+        return last_page_number
+
     # returns list with all lots links from one page (all_lots_links_list_from_one_page)
     def __get_one_page_lots_links_list(self, url):
         one_page_lot_links_list = []
@@ -39,15 +50,6 @@ class CapitalauctionCom:
         # print(len(one_page_lot_links_list))
 
         return one_page_lot_links_list
-
-    # returns last page number
-    def __get_last_page_number(self):
-
-        html_block = self.__get_html_block(self.base_page_url)
-        last_page_html_block = html_block.find("div", class_="pagination catalog__top-pagination")
-        last_page_number = last_page_html_block.findAll("a")[-1].text
-        last_page_number = int(last_page_number)
-        return last_page_number
 
     # returns list of all pages links
     def __get_all_pages_links_list(self):
@@ -78,10 +80,125 @@ class CapitalauctionCom:
 
         return all_pages_lots_links_list
 
+    # returns engine dict of one lot
+    def __get_lot_engine_dict(self, info_line):
+        lot_engine_dict = {}
+
+        info_line = "Engine: 3.2L W12 SOHC 24V"
+
+        lot_engine_dict = {"displacement": None, "cylinders": None,
+                           "charge_type": None, "hp": None, "fuel_type": None,
+                           "configuration": None, "engine_id": None}
+
+        info_line_list = info_line.split()
+
+        displacement = info_line_list[1].replace("L", "")
+        configuration_and_cylinders = info_line_list[2]
+        cylinders = configuration_and_cylinders[1::]
+        configuration = configuration_and_cylinders[0]
+
+        lot_engine_dict["displacement"] = displacement
+        lot_engine_dict["cylinders"] = cylinders
+        lot_engine_dict["configuration"] = configuration
+
+        # pprint(lot_engine_dict)
+
+        return lot_engine_dict
+
+    # returns car auction data
+    # def __get_car_auction_data(self, info_line):
+
+        car_auction_data = {}
+
+        lot_link = None
+        lot_number = None
+        best_buyer_name = None
+
+        info_line_list = info_line.split()
+
+        lot_number
+
+        pprint(lot_number)
+        return car_auction_data
+
+    # returns one car information block
+    def __get_one_car_data_dict(self):
+        car_data = {}
+
+        one_page_url = 'https://www.capitalautoauction.com/inventory/details/0ac304c3-abfd-495b-9513-49651b616613'
+
+        html_block = self.__get_html_block(one_page_url)
+        one_lot_information_block = html_block.find("div", class_="options options--frame")
+        one_lot_information_block_list = one_lot_information_block.findAll("li", class_="options__item")
+
+        lot_vin = None
+        lot_type = None
+        lot_odometer = None
+        lot_color: None
+        lot_year = None
+        lot_drive_type: None
+        lot_make = None
+        lot_model = None
+        lot_transmission: {"transmission_type": None,
+                            "transmission_speeds": None}
+        # lot_pictures: {"lot_pictures_list": None,
+        #                 "lot_base_pictures_list": None}
+
+
+        for html_line in one_lot_information_block_list:
+            info_line = " ".join(html_line.text.split())
+            # pprint(info_line)
+            if "VIN: " in info_line:
+                lot_vin = info_line.split("VIN: ")[1]
+            # elif "Type:" in info_line:
+            #     lot_type = info_line.split("Type:")[1]
+            elif "Odo:" in info_line:
+                lot_odometer = info_line.split("Odo:")[1]
+                if 'ACTUAL' in lot_odometer:
+                    lot_odometer = lot_odometer.split()[0]
+            elif "Ext color:" in info_line:
+                lot_color = info_line.split("Ext color:")[1]
+            elif "Year:" in info_line:
+                lot_year = info_line.split("Year:")[1]
+            elif "Drive:" in info_line:
+                lot_drive_type = info_line.split("Drive:")[1]
+            elif "Make:" in info_line:
+                lot_make = info_line.split("Make:")[1]
+            elif "Model:" in info_line:
+                lot_model = info_line.split("Model:")[1]
+            elif "Transmission:" in info_line:
+                lot_transmission = info_line.split("Transmission:")[1]
+            elif "Engine:" in info_line:
+                lot_engine_dict = self.__get_lot_engine_dict(info_line)
+
+        car_data["lot_vin"] = lot_vin
+        # car_data["lot_type"] = lot_type
+        car_data["lot_odometer"] = lot_odometer
+        car_data["lot_color"] = lot_color
+        car_data["lot_year"] = lot_year
+        car_data["lot_drive_type"] = lot_drive_type
+        car_data["lot_make"] = lot_make
+        car_data["lot_model"] = lot_model
+        car_data["lot_transmission"] = lot_transmission
+        # car_data["lot_pictures"] = lot_pictures
+        car_data["lot_engine_dict"] = lot_engine_dict
+
+
+       # lot_transmission": {"transmission_type": None,
+       #                      "transmission_speeds": None}
+       # lot_pictures": {"lot_pictures_list": None,
+       #                  "lot_base_pictures_list": None}
+
+
+
+        pprint(car_data)
+        return car_data
+
 
     def test(self):
         print('===========================================START====================================================')
-        self.__get_all_pages_lots_links_list()
+        self.__get_one_car_data_dict()
+        # self.__get_one_car_data_dict()
         print('============================================END====================================================')
 
 
