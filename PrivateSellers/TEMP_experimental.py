@@ -1,17 +1,33 @@
-import site
-from pprint import pprint
-import requests
-from bs4 import BeautifulSoup
+import time
+import threading
+from pynput.mouse import Controller, Button
+from pynput.keyboard import Listener, KeyCode
 
-url = 'https://www.capitalautoauction.com/inventory?per_page=100&sort=make&page=1'
+toggle_key = KeyCode(char='x')
+clicking = False
+mouse = Controller()
 
-def get_html_block(url):
-    response = requests.get(url)
-    html_block = BeautifulSoup(response.text, 'html.parser')
 
-    return html_block
+def clicker():
+    while True:
+        if clicking:
+            mouse.click(Button.left, 1)
+            time.sleep(0.3)
 
-html_block = get_html_block(url)
-last_page_html_block = html_block.find("div", class_="pagination catalog__top - pagination")
+def toggle_event(key):
+    if key == toggle_key:
+        global clicking
+        clicking = not clicking
 
-pprint(last_page_html_block)
+
+def main():
+    clicking_thread = threading.Thread(target=clicker)
+    clicking_thread.start()
+
+    with Listener(on_press=toggle_event) as listener:
+        listener.join()
+
+
+if __name__ == '__main__':
+    main()
+
