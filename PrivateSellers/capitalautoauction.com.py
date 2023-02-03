@@ -15,6 +15,7 @@ from bs4 import BeautifulSoup
 class CapitalauctionCom:
     def __init__(self):
         self.base_page_url = "https://www.capitalautoauction.com/inventory?per_page=100&sort=make&page=1"  # In this section we can put any data for calling in any methods in any places
+        self.one_page_url = 'https://www.capitalautoauction.com/inventory/details/a111473d-d3bb-41ce-8067-6bdca1701a7b'
 
     # returns html block of www page
     def __get_html_block(self, url):
@@ -78,6 +79,24 @@ class CapitalauctionCom:
         print(all_pages_lots_links_list)
         return all_pages_lots_links_list
 
+    #returns information block of one lot WITHOUT active bid
+    def __get_one_lot_information_block_without_bid(self, one_page_url):
+        one_lot_information_block_list = []
+        html_block = self.__get_html_block(self.one_page_url)
+        one_lot_information_block = html_block.find("div", class_="options options--frame")
+        one_lot_information_block_list = one_lot_information_block.findAll("li", class_="options__item")
+        # pprint(one_lot_information_block_list)
+        return one_lot_information_block_list
+
+    #returns information block of one lot WITH active bid
+    def __get_one_lot_information_block_with_bid(self, one_page_url):
+        one_lot_information_block_list = []
+        html_block = self.__get_html_block(self.one_page_url)
+        one_lot_information_block = html_block.find("div", class_="options options--frame vehicle__options")
+        one_lot_information_block_list = one_lot_information_block.findAll("li", class_="options__item")
+        pprint(one_lot_information_block_list)
+        return one_lot_information_block_list
+
     # returns engine dict of one lot
     def __get_lot_engine_dict(self, info_line):
         lot_engine_dict = {}
@@ -113,19 +132,16 @@ class CapitalauctionCom:
                             "best_buyer_name": None}
 
         lot_link = url
-        lot_number = None
+        lot_number = None  # Can we put lot number into dictionary using another method (where all data is in)?
         best_buyer_name = None
 
         html_block = self.__get_html_block(url)
-        one_page_all_lots_links_html_block = html_block.find("div", class_="catalog__cards")
-        one_page_all_lots_links_html_block_list = one_page_all_lots_links_html_block.findAll("div", class_="card__main")
+        bid_in_lot_checker = html_block.find(id="bid_now")
 
-        for html_block_link in one_page_all_lots_links_html_block_list:
-            lot_link = html_block_link.find("a").get("href")
-            one_page_lot_links_list.append(lot_link)
-
-
-
+        if bid_in_lot_checker:  # Here we can put just if without any True or 'in' check. How it works: if bid_in_lot_checker = html_block.find(id="bid_now") found something with id = 'bid now', it will works like True. But it will be BS4 object, not boolean.
+            print('Run script with bid lot data + put all data into car_auction_data + run script with collecting lot_auction_data')
+        else:
+            print("Run script with bid lot data + put lot number")
         return car_auction_data
 
     # returns transmission dict of one lot
@@ -240,7 +256,7 @@ class CapitalauctionCom:
 
     def test(self):
         print('===========================================START====================================================')
-        self.__get_all_pages_lots_links_list()
+        self.__get_car_auction_data(self.one_page_url)
         # self.__get_one_car_data_dict()
         print('============================================END====================================================')
 
@@ -308,3 +324,56 @@ capitalauctioncom.test()
 #                                                                            "delivery_longitude": None}}
 
 # printing results here
+
+
+
+
+# LEARNING WITH VLAD:
+#
+# class Copart:
+#     def get_html(self, url):
+#         pass
+#
+#     def get_all_links(self):
+#         url = 'https://www.capitalautoauction.com/inventory?f%5Bmake_id%5D%5B%5D=&f%5Bmodel_id%5D%5B%5D=&f%5Byear_from%5D=&f%5Byear_to%5D='
+#
+#         html = self.get_html(url)
+#         pass
+#
+#     def get_car_data(self, html):
+#         pass
+#
+#     def get_car_auction_data(self, html):
+#         pass
+#
+#     def get_one_lot_full_info(self, url):
+#         one_lot_full_info = {}
+#
+#         html = self.get_html(url)
+#
+#         car_data_html = html.find("A")
+#
+#         car_data = self.get_car_data(car_data_html)
+#         one_lot_full_info['car_data'] = car_data
+#
+#         car_auction_data_html = html.find("A")
+#
+#         car_auction_data = self.get_car_auction_data(car_auction_data_html)
+#         one_lot_full_info['car_auction_data'] = car_auction_data
+#
+#         # ///////
+#
+#         # ///////
+#
+#         return one_lot_full_info
+#
+#     def parser(self):
+#         all_links_list = self.get_all_links()
+#
+#         all_lots_full_info = []
+#
+#         for link in all_links_list:
+#             one_lot_full_info = self.get_one_lot_full_info(link)
+#             all_lots_full_info.append(one_lot_full_info)
+#
+#         return all_lots_full_info
