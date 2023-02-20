@@ -15,13 +15,15 @@ from bs4 import BeautifulSoup
 class CapitalauctionCom:
     def __init__(self):
         self.base_page_url = "https://www.capitalautoauction.com/inventory?per_page=100&sort=make&page=1"  # In this section we can put any data for calling in any methods in any places
-        self.one_page_url = 'https://www.capitalautoauction.com/inventory/details/a111473d-d3bb-41ce-8067-6bdca1701a7b'
+        self.one_page_url = 'https://www.capitalautoauction.com/inventory/details/b38cdc6c-439d-41b8-ad8c-c27295d64776'  #Without bid
+        # self.one_page_url = 'https://www.capitalautoauction.com/inventory/details/f8f83897-c985-49e8-9568-37b90dff9167'  #Wit bid
 
     # returns html block of www page
-    def __get_html_block(self, url):
+    def __get_html_block(self, one_page_url):
 
-        response = requests.get(url)
+        response = requests.get(one_page_url)
         html_block = BeautifulSoup(response.text, 'html.parser')
+        print(f'html_block of {one_page_url} is done')  # This string is for testing ONLY
 
         return html_block
 
@@ -80,22 +82,24 @@ class CapitalauctionCom:
         return all_pages_lots_links_list
 
     #returns information block of one lot WITHOUT active bid
-    def __get_one_lot_information_block_without_bid(self, one_page_url):
+    def __get_one_lot_information_block_without_bid(self, html_block):
         one_lot_information_block_list = []
-        html_block = self.__get_html_block(self.one_page_url)
+
         one_lot_information_block = html_block.find("div", class_="options options--frame")
         one_lot_information_block_list = one_lot_information_block.findAll("li", class_="options__item")
-        # pprint(one_lot_information_block_list)
+
+        print('PUTIN HUILO')
         return one_lot_information_block_list
 
     #returns information block of one lot WITH active bid
-    def __get_one_lot_information_block_with_bid(self, one_page_url):
+    def __get_one_lot_information_block_with_bid(self, html_block):
         one_lot_information_block_list = []
-        html_block = self.__get_html_block(self.one_page_url)
+
         one_lot_information_block = html_block.find("div", class_="options options--frame vehicle__options")
         one_lot_information_block_list = one_lot_information_block.findAll("li", class_="options__item")
-        pprint(one_lot_information_block_list)
+
         return one_lot_information_block_list
+
 
     # returns engine dict of one lot
     def __get_lot_engine_dict(self, info_line):
@@ -122,45 +126,15 @@ class CapitalauctionCom:
 
         return lot_engine_dict
 
-    # returns car auction data
-    def __get_car_auction_data(self, url):
-
-        car_auction_data = {}
-
-        car_auction_data = {"lot_link": None,
-                            "lot_number": None,
-                            "best_buyer_name": None}
-
-        lot_link = url
-        lot_number = None  # Can we put lot number into dictionary using another method (where all data is in)?
-        best_buyer_name = None
-
-        html_block = self.__get_html_block(url)
-        bid_in_lot_checker = html_block.find(id="bid_now")
-
-        if bid_in_lot_checker:  # Here we can put just if without any True or 'in' check. How it works: if bid_in_lot_checker = html_block.find(id="bid_now") found something with id = 'bid now', it will works like True. But it will be BS4 object, not boolean.
-            print('Run script with bid lot data + put all data into car_auction_data + run script with collecting lot_auction_data')
-        else:
-            print("Run script with bid lot data + put lot number")
-        return car_auction_data
-
     # returns transmission dict of one lot
-    def __get_lot_transmission_dict(self, info_line):
+    def __get_lot_transmission_dict(self, one_lot_information_block_list):
         lot_transmission = {}
 
         lot_transmission: {"transmission_type": None,
                            "transmission_speeds": None}
 
-        one_page_url = 'https://www.capitalautoauction.com/inventory/details/0ac304c3-abfd-495b-9513-49651b616613'
-
-        html_block = self.__get_html_block(one_page_url)
-        one_lot_information_block = html_block.find("div", class_="options options--frame")
-        one_lot_information_block_list = one_lot_information_block.findAll("li", class_="options__item")
-
         for html_line in one_lot_information_block_list:
             info_line = " ".join(html_line.text.split())
-
-            # info_line = "Transmission: Manual 6"  # THIS LINE IS FOR TESTING ONLY !!!!!!!!!!!!!!!!!!!!
 
             if "Transmission:" in info_line:
                 lot_transmission_string_with_number = info_line[-1]
@@ -170,27 +144,25 @@ class CapitalauctionCom:
                     transmission_type = info_line.replace(lot_transmission_string_with_number, '')
                     transmission_type = transmission_type.strip()
                 else:
-                    transmission_type = info_line.split()[-1]
+                    transmission_type = info_line.split(':')[-1]
                     transmission_speeds = None
 
-                # pprint(transmission_type)
-                # pprint(transmission_speeds)
-
-        lot_transmission: {"transmission_type": transmission_type,
-                           "transmission_speeds": transmission_speeds}
-        pprint(lot_transmission)
+        lot_transmission["transmission_type"] = transmission_type
+        lot_transmission["transmission_speeds"] = transmission_speeds
 
         return lot_transmission
 
+
+
     # returns one car information block
-    def __get_one_car_data_dict(self):
+    def __get_one_car_data_dict(self, html_block):
         car_data = {}
 
-        one_page_url = 'https://www.capitalautoauction.com/inventory/details/0ac304c3-abfd-495b-9513-49651b616613'
 
-        html_block = self.__get_html_block(one_page_url)
         one_lot_information_block = html_block.find("div", class_="options options--frame")
         one_lot_information_block_list = one_lot_information_block.findAll("li", class_="options__item")
+        # print('one_lot_information_block_list = ')
+        # pprint(one_lot_information_block_list)
 
         lot_vin = None
         lot_type = None
@@ -207,7 +179,6 @@ class CapitalauctionCom:
 
         for html_line in one_lot_information_block_list:
             info_line = " ".join(html_line.text.split())
-            # pprint(info_line)
             if "VIN: " in info_line:
                 lot_vin = info_line.split("VIN: ")[1]
             # elif "Type:" in info_line:
@@ -250,80 +221,80 @@ class CapitalauctionCom:
 
 
 
-        pprint(car_data)
         return car_data
+
+    # returns one car auction time dict
+    def __get_lot_auction_time_dict(self):
+        pass
+
+    # returns one car bid dict
+    def __get_lot_bid_dict(self):
+        pass
+
+    # returns one car auction data dict (takes data from lot_auction_time_dict AND lot_bid_dict)
+    def __get_lot_auction_data(self):
+        pass
+
+    # returns car auction data (depending on Bid or NOT Bid in the lot)
+    def __get_car_auction_data(self, one_lot_link, html_block):
+        car_auction_data = {}
+
+        car_auction_data = {"lot_link": None,
+                            "lot_number": None,
+                            "best_buyer_name": None}
+
+        lot_link = one_lot_link
+        lot_number = None  # Can we put lot number into dictionary using another method (where all data is in)?
+        best_buyer_name = None
+
+
+        return car_auction_data
+
+    # returns dict with ALL data for one lot from all mini-dictionaries
+    def __get_one_lot_valid_data_dict(self, one_page_url):
+        one_lot_valid_data_dict = {}
+
+        html_block = self.__get_html_block(one_page_url)
+
+        bid_in_lot_checker = html_block.find(id="bid_now")
+        if bid_in_lot_checker:  # Here we can put just if without any True or 'in' check. How it works: if bid_in_lot_checker = html_block.find(id="bid_now") found something with id = 'bid now', it will works like True. But it will be BS4 object, not boolean.
+            self.__get_one_lot_information_block_with_bid(html_block)
+        else:
+            self.__get_one_lot_information_block_without_bid(html_block)
+
+        one_lot_valid_data_dict["car_data"] = self.__get_one_car_data_dict(html_block)
+        one_lot_valid_data_dict["car_auction_data"] = self.__get_car_auction_data(one_page_url, html_block)
+        one_lot_valid_data_dict["lot_auction_data"] = self.__get_lot_auction_data()
+        one_lot_valid_data_dict["location_dict"] = {"lot_location_dict": {"lot_location_city": None,
+                                                                          "lot_location_state_name": None,
+                                                                          "lot_location_state_code": None,
+                                                                          "lot_location_zip": None,
+                                                                          "lot_Lane/Item/Grid/Row": None,
+                                                                          "lot_latitude": None,
+                                                                          "lot_longitude": None},
+                                                    "delivery_location_dict": {'delivery_city': 'Merrillville',
+                                                                               'delivery_state_code': 'IN',
+                                                                               'delivery_state_name': 'Indiana',
+                                                                               'delivery_zip': '46410',
+                                                                               "delivery_latitude": None,
+                                                                               "delivery_longitude": None}}
+        print('--------------------------------FINAL RESULT--------------------------------')
+        pprint(one_lot_valid_data_dict)
+        print('--------------------------------FINAL RESULT--------------------------------')
+
 
 
     def test(self):
         print('===========================================START====================================================')
-        self.__get_car_auction_data(self.one_page_url)
-        # self.__get_one_car_data_dict()
+        self.__get_one_lot_valid_data_dict(self.one_page_url)
         print('============================================END====================================================')
 
 
 capitalauctioncom = CapitalauctionCom()
-capitalauctioncom.test()
-# Returns dict - car_data = {lot_car_fax_link': None, 'lot_color': None,...........}
-# def (self, one_lot_html_block, lot_link):
-#     one_lot_valid_data_dict = {}
-#
-#     one_lot_valid_data_dict = ["car_data"] = {"lot_vin": None,
-#                                            "lot_type": None,
-#                                            "lot_odometer": None,
-#                                            "lot_color": None,
-#                                            "lot_year": None,
-#                                            "lot_drive_type": None,
-#                                            "lot_make": None,
-#                                            "lot_model": None,
-#                                            "lot_transmission": {"transmission_type": None,
-#                                                                 "transmission_speeds": None},
-#                                            "lot_trim": None,
-#                                            "lot_pictures": {"lot_pictures_list": None,
-#                                                             "lot_base_pictures_list": None},
-#                                            "lot_keys": None,
-#                                            "lot_title_status": None,
-#                                            "lot_damage_type": None,
-#                                            "lot_car_fax_link": None,
-#                                            "lot_factory_body_code": None,
-#                                            "lot_truck_cab_type": None,
-#                                            "lot_engine_dict": {"displacement": None, "cylinders": None,
-#                                                                "charge_type": None, "hp": None, "fuel_type": None,
-#                                                                "configuration": None, "engine_id": None}}
-#     one_lot_valid_data_dict["car_auction_data"] = {"lot_link": None,
-#                                                    "lot_number": None,
-#                                                    "best_buyer_name": None}
-#     one_lot_valid_data_dict["lot_auction_data"] = {"lot_auction_time_dict": {'auction_status': None,
-#                                                                              'auction_date': None,
-#                                                                              'auction_month': None,
-#                                                                              'auction_time': None,
-#                                                                              'auction_time_zone': None},
-#                                                    "lot_bid_dict": {"lot_minimum_bid": None,
-#                                                                     "lot_increment_bid": None,
-#                                                                     "lot_current_bid": None,
-#                                                                     "lot_starting_bid": None,
-#                                                                     "auction_fee": None,
-#                                                                     "lot_delivery_price": None,
-#                                                                     "lot_sell_max_offer": None,
-#                                                                     "lot_condition_report": 134,
-#                                                                     "lot_buy_now_price": None,
-#                                                                     "lot_clear_profit": None,
-#                                                                     "buy_now_fee": None,
-#                                                                     "buy_now_clear_profit": None}}
-#     one_lot_valid_data_dict["location_dict"] = {"lot_location_dict": {"lot_location_city": None,
-#                                                                       "lot_location_state_name": None,
-#                                                                       "lot_location_state_code": None,
-#                                                                       "lot_location_zip": None,
-#                                                                       "lot_Lane/Item/Grid/Row": None,
-#                                                                       "lot_latitude": None,
-#                                                                       "lot_longitude": None},
-#                                                 "delivery_location_dict": {'delivery_city': 'Merrillville',
-#                                                                            'delivery_state_code': 'IN',
-#                                                                            'delivery_state_name': 'Indiana',
-#                                                                            'delivery_zip': '46410',
-#                                                                            "delivery_latitude": None,
-#                                                                            "delivery_longitude": None}}
 
-# printing results here
+
+capitalauctioncom.test()
+
 
 
 
@@ -377,3 +348,7 @@ capitalauctioncom.test()
 #             all_lots_full_info.append(one_lot_full_info)
 #
 #         return all_lots_full_info
+
+
+
+
